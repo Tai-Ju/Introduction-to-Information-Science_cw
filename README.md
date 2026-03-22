@@ -1,6 +1,8 @@
 # 📊 Linear Programming: Furniture Production Optimization
 ## 線性規劃優化 - 家具生產利潤最大化
 
+🌐 **互動圖表**：[tai-ju.github.io/Introduction-to-Information-Science_cw](https://tai-ju.github.io/Introduction-to-Information-Science_cw/)
+
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
 [![PuLP](https://img.shields.io/badge/PuLP-Linear_Programming-green.svg)](https://python-pulp.readthedocs.io/)
 [![Matplotlib](https://img.shields.io/badge/Matplotlib-Visualization-orange.svg)](https://matplotlib.org/)
