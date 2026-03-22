@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linear Programming: Furniture Production Optimization</title>
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; padding: 24px; }
+h1 { font-size: 20px; font-weight: 700; text-align: center; margin-bottom: 4px; color: #fff; }
+h2 { font-size: 14px; font-weight: 400; text-align: center; color: #aaa; margin-bottom: 24px; }
+#chart { width: 100%; max-width: 900px; margin: 0 auto 32px; background: #fff; border-radius: 8px; }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 900px; margin: 0 auto; }
+.info-box { background: #16213e; border: 1px solid #0f3460; border-radius: 8px; padding: 18px 22px; }
+.info-box h3 { font-size: 13px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.info-box p { font-size: 14px; line-height: 2; color: #ddd; font-family: 'Courier New', monospace; }
+.highlight { color: #fbbf24; font-weight: 700; }
+.green { color: #34d399; }
+.red { color: #f87171; }
+.blue { color: #60a5fa; }
+.purple { color: #c084fc; }
+@media(max-width:600px){ .info-grid{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+
+<h1>Linear Programming: Furniture Production Optimization</h1>
+<h2>Objective: Maximize Profit = $50T + $30C</h2>
+
+<div id="chart"></div>
+
+<div class="info-grid">
+  <div class="info-box">
+    <h3>Optimal Solution</h3>
+    <p>
+      Tables (T): <span class="highlight">320</span><br>
+      Chairs (C): <span class="highlight">360</span><br>
+      Max Profit: <span class="highlight">$26,800</span>
+    </p>
+  </div>
+  <div class="info-box">
+    <h3>Constraints</h3>
+    <p>
+      <span class="red">Carpentry: 3T + 4C ≤ 2,400</span><br>
+      <span class="blue">Painting:  2T +  C ≤ 1,000</span><br>
+      <span class="green">Chairs:        C ≤ 450</span><br>
+      <span class="purple">Tables:    T ≥ 100</span>
+    </p>
+  </div>
+  <div class="info-box">
+    <h3>Resource Utilization</h3>
+    <p>
+      Carpentry: 3(320)+4(360) = <span class="highlight">2,400 / 2,400 (100%)</span><br>
+      Painting:  2(320)+1(360) = <span class="highlight">1,000 / 1,000 (100%)</span><br>
+      Chairs:    360 ≤ 450 <span class="green">(80%)</span><br>
+      Tables:    320 ≥ 100 <span class="green">✓</span>
+    </p>
+  </div>
+  <div class="info-box">
+    <h3>Problem Formulation</h3>
+    <p>
+      <span class="highlight">maximize</span> Z = 50T + 30C<br>
+      <span class="highlight">subject to</span><br>
+      &nbsp;&nbsp;3T + 4C ≤ 2,400<br>
+      &nbsp;&nbsp;2T +  C ≤ 1,000<br>
+      &nbsp;&nbsp;C ≤ 450, T ≥ 100
+    </p>
+  </div>
+</div>
+
+<script>
+// ── Data ─────────────────────────────────────────
+var T = [];
+for (var i = 0; i <= 600; i += 2) T.push(i);
+
+var C1 = T.map(function(t){ return (2400 - 3*t) / 4; });   // Carpentry
+var C2 = T.map(function(t){ return 1000 - 2*t; });          // Painting
+var C3 = T.map(function(t){ return 450; });                  // Max chairs
+
+// ── Feasible region vertices (from Python logic) ─
+// (100,450), (200,450), (275,450), (320,360), (500,0), (100,0)
+// filter those satisfying all constraints:
+// Verified: (100,450), (200,450), (275,450), (320,360), (500,0), (100,0)
+var fx = [100, 200, 275, 320, 500, 100, 100];
+var fy = [450, 450, 450, 360,   0,   0, 450];
+
+// ── Iso-profit lines ─────────────────────────────
+var maxProfit = 26800;
+var profitLevels = [5000, 11450, 17900, 22350, 26800];
+var isoProfitTraces = profitLevels.map(function(p, i) {
+  var C_p = T.map(function(t){ return (p - 50*t) / 30; });
+  return {
+    type: 'scatter', x: T, y: C_p, mode: 'lines',
+    name: p === maxProfit ? 'Max Profit Line: $' + p.toLocaleString() : '',
+    showlegend: p === maxProfit,
+    line: {
+      color: 'black',
+      width: p === maxProfit ? 2 : 1,
+      dash: p === maxProfit ? 'dash' : 'dot'
+    },
+    opacity: p === maxProfit ? 0.8 : 0.25
+  };
+});
+
+// ── All traces ────────────────────────────────────
+var traces = [
+  // Feasible region (yellow fill)
+  {
+    type: 'scatter', x: fx, y: fy,
+    fill: 'toself', fillcolor: 'rgba(255,255,0,0.3)',
+    line: { color: 'black', width: 2 },
+    name: 'Feasible Region',
+    hoverinfo: 'skip'
+  },
+  // Constraint 1: Carpentry (red)
+  {
+    type: 'scatter', x: T, y: C1, mode: 'lines',
+    name: 'Carpentry: 3T + 4C ≤ 2400',
+    line: { color: 'red', width: 2 }, opacity: 0.7
+  },
+  // Constraint 2: Painting (blue)
+  {
+    type: 'scatter', x: T, y: C2, mode: 'lines',
+    name: 'Painting: 2T + C ≤ 1000',
+    line: { color: 'blue', width: 2 }, opacity: 0.7
+  },
+  // Constraint 3: Max chairs (green)
+  {
+    type: 'scatter', x: T, y: C3, mode: 'lines',
+    name: 'Max Chairs: C ≤ 450',
+    line: { color: 'green', width: 2 }, opacity: 0.7
+  },
+  // Constraint 4: Min tables (purple vertical)
+  {
+    type: 'scatter', x: [100, 100], y: [0, 700], mode: 'lines',
+    name: 'Min Tables: T ≥ 100',
+    line: { color: 'purple', width: 2 }, opacity: 0.7
+  },
+  // Optimal solution star
+  {
+    type: 'scatter', x: [320], y: [360],
+    mode: 'markers+text',
+    name: 'Optimal Solution: T=320, C=360',
+    marker: { color: 'red', size: 20, symbol: 'star' },
+    text: ['  Optimal: (320, 360)<br>  Profit: $26,800'],
+    textposition: 'top right',
+    textfont: { size: 12, color: 'black' }
+  }
+].concat(isoProfitTraces);
+
+// ── Layout ────────────────────────────────────────
+var layout = {
+  paper_bgcolor: '#ffffff',
+  plot_bgcolor:  '#ffffff',
+  font: { family: 'Segoe UI, Arial', size: 12, color: '#333' },
+  xaxis: {
+    title: { text: 'Tables (T)', font: { size: 14, color: '#333' } },
+    range: [0, 600], gridcolor: '#ddd', gridwidth: 1,
+    zeroline: true, zerolinecolor: '#999'
+  },
+  yaxis: {
+    title: { text: 'Chairs (C)', font: { size: 14, color: '#333' } },
+    range: [0, 700], gridcolor: '#ddd', gridwidth: 1,
+    zeroline: true, zerolinecolor: '#999'
+  },
+  title: {
+    text: 'Linear Programming: Furniture Production Optimization<br>' +
+          '<sub>Objective: Maximize Profit = $50T + $30C</sub>',
+    font: { size: 16, color: '#111' }
+  },
+  legend: {
+    x: 0.65, y: 0.98,
+    bgcolor: 'rgba(255,255,255,0.9)',
+    bordercolor: '#ccc', borderwidth: 1,
+    font: { size: 10 }
+  },
+  annotations: [
+    {
+      x: 320, y: 360,
+      xref: 'x', yref: 'y',
+      text: 'Optimal: (320, 360)<br>Profit: $26,800',
+      showarrow: true,
+      arrowhead: 2, arrowsize: 1.5, arrowwidth: 2,
+      ax: 70, ay: -60,
+      bgcolor: 'rgba(255,255,0,0.8)',
+      bordercolor: '#999', borderwidth: 1,
+      font: { size: 12, color: '#000' }
+    },
+    {
+      x: 0.02, y: 0.98,
+      xref: 'paper', yref: 'paper',
+      text: '<b>Constraints:</b><br>• Carpentry: 3T + 4C ≤ 2,400<br>• Painting: 2T + C ≤ 1,000<br>• Chairs: C ≤ 450<br>• Tables: T ≥ 100',
+      showarrow: false,
+      align: 'left',
+      bgcolor: 'rgba(245,222,179,0.85)',
+      bordercolor: '#ccc', borderwidth: 1,
+      font: { size: 11 }
+    }
+  ],
+  margin: { t: 80, b: 60, l: 70, r: 30 },
+  height: 600
+};
+
+Plotly.newPlot('chart', traces, layout, { responsive: true });
+</script>
+</body>
+</html>
